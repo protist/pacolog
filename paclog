@@ -48,7 +48,7 @@ if [[ $# != 1 ]]; then
 fi
 
 # Determine which repository package is from, and build url
-repo=$(pacman -Ss ^${1}$ | sed 's|/.*||;q')
+repo=$(pacman -Sp --print-format %r ${1} 2>/dev/null)
 
 case $repo in
 core|extra|testing)
