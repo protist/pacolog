@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+#
+# Copyright 2016 Lee M. Yeoh (email: "plast-dot-id-dot-au" follows "github")
+# This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# List recent commits for an Arch Linux package (specified as the script's argument)
+# Optionally, only display the first NUM commits, using -l NUM.
+
+# Define usage.
+usage() {
+  cat >&2 <<EOF
+Usage: $0 [-l NUM] PACKAGE_NAME | -h
+  -l NUM      optionally, only display NUM latest entries
+  -h          display this help text and exit
+EOF
+  exit 1
+}
+
+# Parse options.
+while getopts 'l:h' opt; do
+  case "${opt}" in
+    l) length=$OPTARG ;;
+    *) usage ;;
+  esac
+done
+
+# Check -l argument. If $length is empty, then equivalent to flag never being specified. Zero is okay (NOP), negative is not.
+if ! [[ $length =~ ^[0-9]*$ ]]; then
+  echo 'ERROR: wrong argument supplied to -l'
+  exit 1
+fi
+
+shift $((OPTIND-1))
+
+# Check primary argument(s)
+if [[ $# != 1 ]]; then
+  echo 'ERROR: specify a single package as argument'
+  exit 1
+fi
+
+# Determine which repository package is from, and build url
+repo=$(pacman -Ss ^${1}$ | sed 's|/.*||;q')
+
+case $repo in
+core|extra|testing)
+  pre_url='https://projects.archlinux.org/svntogit/packages.git/log/trunk?h=packages/'
+  ;;
+community|multilib)
+  pre_url='https://projects.archlinux.org/svntogit/community.git/log/trunk?h=packages/'
+  ;;
+'') # AUR or package not found
+  pre_url='https://aur.archlinux.org/cgit/aur.git/log/?h='
+  ;;
+*)
+  echo "ERROR: Unknown repository returned (\"${repo}\")" >&2
+  exit 1
+  ;;
+esac
+
+post_url='&showmsg=1'
+
+# Parse commit log
+output=$(w3m -dump "${pre_url}${1}${post_url}" | sed -n '/Commit message/,/^\s*$/p')
+
+# Check for presence of log
+if [ -z "$output" ]; then
+  echo "ERROR: no log found for ${1}"
+  exit 1
+fi
+
+# Truncate if necessary
+if [ -z $length ]; then
+  echo "$output"
+else
+  <<<"$output" gawk -v l=$length 'BEGIN {nth=0}; /^\s/ {print; next} {if (nth == l){exit} else {print}; nth++}'
+fi
