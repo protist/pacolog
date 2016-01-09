@@ -77,9 +77,12 @@ if [ -z "$output" ]; then
   exit 1
 fi
 
+# Remove "(Collapse)" from header
+clean_output="$(<<<"$output" sed '1 s/(Collapse)/          /')"
+
 # Truncate if necessary
 if [ -z $length ]; then
-  echo "$output"
+  echo "$clean_output"
 else
-  <<<"$output" gawk -v l=$length 'BEGIN {nth=0}; /^\s/ {print; next} {if (nth == l){exit} else {print}; nth++}'
+  <<<"$clean_output" gawk -v l=$length 'BEGIN {nth=0}; /^\s/ {print; next} {if (nth == l){exit} else {print}; nth++}'
 fi
