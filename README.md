@@ -7,7 +7,7 @@ List recent commits for Arch Linux packages. `paclog` can query packages from [o
 
 ```
 $ paclog -l 3 vim
-   Age                 Commit message (Collapse)              Author    Lines
+   Age                 Commit message                         Author    Lines
 9 hours    Use dynamic loading for language bindings         anatolik  -19/+24
            This allows to move Perl, Lua and Ruby into package optional
            dependencies. In the future it allows to eliminate vim-minimal
