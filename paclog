@@ -36,6 +36,7 @@ done
 # Check -l argument. If $length is empty, then equivalent to flag never being specified. Zero is okay (NOP), negative is not.
 if ! [[ $length =~ ^[0-9]*$ ]]; then
   echo 'ERROR: wrong argument supplied to -l'
+  usage
   exit 1
 fi
 
@@ -44,11 +45,18 @@ shift $((OPTIND-1))
 # Check primary argument(s)
 if [[ $# != 1 ]]; then
   echo 'ERROR: specify a single package as argument'
+  usage
   exit 1
 fi
 
-# Determine which repository package is from, and build url
-repo=$(pacman -Sp --print-format %r ${1} 2>/dev/null)
+# Determine package's repository and base package, and start to build url
+package_page=$(w3m -dump "https://www.archlinux.org/packages/extra/x86_64/${1}/")
+repo=$(sed -nr 's/^\s*Repository:\s*(\S*)$/\1/p' <<<"${package_page}")
+repo=$(tr '[:upper:]' '[:lower:]' <<<"${repo}")
+base=$(sed -nr 's/^\s*Base Package:\s*(\S*)$/\1/p' <<<"${package_page}")
+if [ -z "$base" ]; then
+  base="${1}"
+fi
 
 case $repo in
 core|extra|testing)
@@ -69,7 +77,7 @@ esac
 post_url='&showmsg=1'
 
 # Parse commit log
-output=$(w3m -dump "${pre_url}${1}${post_url}" | sed -n '/Commit message/,/^\s*$/p')
+output=$(w3m -dump "${pre_url}${base}${post_url}" | sed -n '/Commit message/,/^\s*$/p')
 
 # Check for presence of log
 if [ -z "$output" ]; then
