@@ -49,10 +49,11 @@ if [[ $# != 1 ]]; then
   exit 1
 fi
 
-# Determine package's repository and base package, and start to build url
-package_page=$(w3m -dump "https://www.archlinux.org/packages/extra/x86_64/${1}/")
-repo=$(sed -nr 's/^\s*Repository:\s*(\S*)$/\1/p' <<<"${package_page}")
-repo=$(tr '[:upper:]' '[:lower:]' <<<"${repo}")
+# Determine package's repository
+repo=$(pacman -Sp --print-format %r ${1} 2>/dev/null)
+
+# Determine base package, and start to build url
+package_page=$(w3m -dump "https://www.archlinux.org/packages/${repo}/x86_64/${1}/")
 base=$(sed -nr 's/^\s*Base Package:\s*(\S*)$/\1/p' <<<"${package_page}")
 if [ -z "$base" ]; then
   base="${1}"
