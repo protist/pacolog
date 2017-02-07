@@ -50,7 +50,7 @@ if [[ $# != 1 ]]; then
 fi
 
 # Determine package's repository
-repo=$(pacman -Sp --print-format %r ${1} 2>/dev/null)
+repo=$(pacman -Spdd --print-format %r ${1} 2>/dev/null)
 
 # Determine base package, and start to build url
 package_page=$(w3m -dump "https://www.archlinux.org/packages/${repo}/x86_64/${1}/")
